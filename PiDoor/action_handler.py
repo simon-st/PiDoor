@@ -1,6 +1,11 @@
 
 from PiDoor.exceptions import ActionNotFoundException
 from PiDoor import pi_handler
+from threading import Thread
+from PiDoor.pi_handler import isDark, turnOnLight, turnOffLight
+from PiDoor.config import DEFAULT_DOOR_LIGHT
+
+
 
 def init():
     print('init()')
@@ -63,11 +68,25 @@ def lights(args):
     
 def startMotionDetection():
     print('startMotionDetection()')
-    pi_handler.startMotionDetection()
+    thread = Thread(target=pi_handler.startMotionDetection, args=(motion_callback, ))
+    thread.start()
+    print('startMotionDetection() ... detector thread started')
+
+def motion_callback(hasMotion):
+    isDark = pi_handler.isDark()
+    print('motion_callback() ... motion: ' +str(hasMotion) +' isDark: ' +str(isDark))
+    if hasMotion and isDark:
+        turnLightOn(DEFAULT_DOOR_LIGHT)
+    elif not hasMotion:
+        turnLightOff(DEFAULT_DOOR_LIGHT)
+    
 
 def stopMotionDetection():
     print('stopMotionDetection()')
     pi_handler.stopMotionDetection()
+
+def getLightIndex():
+    print("action_handle.getLightIndex() : " +str(pi_handler.getLightIndex()))
     
 actions = {
     'door' : door,

@@ -13,6 +13,7 @@ GPIO.setup(GPIO_PIN_RELY_2,GPIO.OUT)
 GPIO.setup(GPIO_MOTION,GPIO.IN)
 
 servo = GPIO.PWM(GPIO_PIN_SERVO,50)
+servo.start(SERVO_POS_RIGHT)
 motion_detection_on = True
     
 def cleanup():
@@ -20,7 +21,7 @@ def cleanup():
     GPIO.cleanup()
 
 def moveServo(pos):
-    servo.start(pos)
+    servo.ChangeDutyCycle(pos)
 
 def unlockDoor():
     print('pi_handler.unlockDoor()')
@@ -48,20 +49,44 @@ def turnOffLight(index):
     print('pi_handler.turnOffLight()')
     setLightMode(index, GPIO.HIGH)
 
-def startMotionDetection():
+def startMotionDetection(callback=None):
+    global motion_detection_on
     motion_detection_on = True
     has_motion = False
+    print('start detection loop')
     while motion_detection_on:
         motion = GPIO.input(GPIO_MOTION)
         if not motion == has_motion:
             has_motion = motion
             if motion:
                 print('motion')
+                callback(True)
             else:
                 print('no motion')
+                callback(False)
         time.sleep(1)
+    
+    print('stop detection loop')
 
 def stopMotionDetection():
+    global motion_detection_on
     motion_detection_on = False
+
+def isDark():
+    return getLightIndex() >= LIGHT_SENSOR_DARK_INDEX
+
+def getLightIndex():
+    GPIO.setup(GPIO_LIGHT_SENSOR, GPIO.OUT)
+    GPIO.output(GPIO_LIGHT_SENSOR, GPIO.LOW)
+    time.sleep(0.1)
+    
+    index = 0
+    GPIO.setup(GPIO_LIGHT_SENSOR, GPIO.IN)
+    while GPIO.input(GPIO_LIGHT_SENSOR) == GPIO.LOW:
+        index += 1
+    
+    print('getLightIndex() ... index: ' +str(index))
+    
+    return index
     
     
